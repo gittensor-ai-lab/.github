@@ -58,6 +58,8 @@ Primary target is RTX Spark — the first consumer device with enough unified me
 
 **[CODA](https://github.com/HanGuo97/coda-kernels)-style epilogue fusion.** Gate and input projections computed in one WGMMA pass with interleaved weight layout; SwiGLU applied in the accumulator register file before any global memory write. No intermediate [T, 2F] tensor touches DRAM.
 
+**Blackwell warp specialization.** Persistent kernels split warpgroups into dedicated producer (TMA async bulk copy) and consumer (WGMMA compute) roles. Producers pipeline the next tile into the 228 KB shared memory bank while consumers execute the current tile — compute and memory fully overlapped. On RTX Spark's bandwidth-constrained LPDDR5X this is the difference between running at memory peak and stalling on load latency.
+
 ---
 
 ## SN74
