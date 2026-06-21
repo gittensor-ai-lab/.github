@@ -56,7 +56,7 @@ Primary target is RTX Spark — the first consumer device with enough unified me
 
 **Sync-free MoE.** Token counts from the router stay in GPU memory. No `cudaMemcpy`, no `cudaDeviceSynchronize` between routing and dispatch. The entire MoE forward pass — routing → GroupGEMM → SwiGLU epilogue — is captured in a single CUDA graph.
 
-**CODA-style epilogue fusion.** Gate and input projections computed in one WGMMA pass with interleaved weight layout; SwiGLU applied in the accumulator register file before any global memory write. No intermediate [T, 2F] tensor touches DRAM.
+**[CODA](https://github.com/HanGuo97/coda-kernels)-style epilogue fusion.** Gate and input projections computed in one WGMMA pass with interleaved weight layout; SwiGLU applied in the accumulator register file before any global memory write. No intermediate [T, 2F] tensor touches DRAM.
 
 ---
 
