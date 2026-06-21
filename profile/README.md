@@ -52,7 +52,7 @@ Primary target is RTX Spark — the first consumer device with enough unified me
 
 ## Kernel engineering focus
 
-**No Triton.** Native C++ and CUDA with [CuTe DSL](https://github.com/NVIDIA/cutlass) (CUTLASS tensor layout DSL) throughout. CuTe exposes TMA, WGMMA, persistent kernels, and epilogue visitor composition — the primitives that reach the performance ceiling on sm_100.
+**No Triton.** Native C++ and CUDA with [CuTe DSL](https://docs.nvidia.com/cutlass/latest/media/docs/pythonDSL/cute_dsl.html) (CUTLASS tensor layout DSL) throughout. CuTe exposes TMA, WGMMA, persistent kernels, and epilogue visitor composition — the primitives that reach the performance ceiling on sm_100.
 
 **Sync-free MoE.** Token counts from the router stay in GPU memory. No `cudaMemcpy`, no `cudaDeviceSynchronize` between routing and dispatch. The entire MoE forward pass — routing → GroupGEMM → SwiGLU epilogue — is captured in a single CUDA graph.
 
