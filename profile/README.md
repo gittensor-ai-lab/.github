@@ -56,7 +56,7 @@ Primary target is RTX Spark — the first consumer device with enough unified me
 
 **Sync-free MoE.** Token counts from the router stay in GPU memory. No `cudaMemcpy`, no `cudaDeviceSynchronize` between routing and dispatch. The entire MoE forward pass — routing → GroupGEMM → SwiGLU epilogue — is captured in a single CUDA graph.
 
-**[CODA](https://github.com/HanGuo97/coda-kernels)-style epilogue fusion.** Gate and input projections computed in one WGMMA pass with interleaved weight layout; SwiGLU applied in the accumulator register file before any global memory write. No intermediate [T, 2F] tensor touches DRAM.
+**Fused MoE GroupGEMM + SwiGLU.** Inspired by [NVIDIA's MoE fusion kernel work](https://developer.nvidia.com/blog/boosting-moe-training-throughput-with-advanced-fusion-kernels/): gate and input projections fused into a single GroupGEMM pass with interleaved weight layout; SwiGLU applied in the accumulator register file before any global memory write. No intermediate [T, 2F] tensor touches DRAM. Unlike dense epilogue fusion (e.g. CODA), the MoE case must handle variable token counts per expert — solved by tracking counts in GPU memory and computing tile assignments on-device.
 
 **Blackwell warp specialization.** Persistent kernels split warpgroups into dedicated producer (TMA async bulk copy) and consumer (WGMMA compute) roles. Producers pipeline the next tile into the 228 KB shared memory bank while consumers execute the current tile — compute and memory fully overlapped. On RTX Spark's bandwidth-constrained LPDDR5X this is the difference between running at memory peak and stalling on load latency.
 
