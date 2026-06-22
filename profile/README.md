@@ -24,7 +24,7 @@ Real kernel and runtime engineering: reproducible, hardware-level inference-spee
 
 **Qwen3-30B-A3B (Q4_K_M GGUF) runs end-to-end on an RTX PRO 6000 Blackwell (sm_120)**, decode optimized **0.60 → 134 tok/s (≈220×)** across 6 source-verifiable passes — **within 1.8× of llama.cpp** on the same model + GPU, output verified correct, **21.7 GB resident** (experts kept quantized, vs ~57 GB bf16).
 
-Independently **verified on an RTX 5090** (sm_120, CUDA 13): clean build, `ctest` **5/5**, compute-sanitizer **0 errors**, same correct output, **163.88 tok/s** decode at **21.4 GB** — fits a 32 GB consumer card. ([results](https://github.com/gittensor-ai-lab/sparkinfer/blob/main/bench/results/qwen3-30b-a3b_q4km_rtx5090.md))
+Independently **verified on an RTX 5090** (sm_120, CUDA 13): clean build, `ctest` **5/5**, compute-sanitizer **0 errors**, same correct output, **163.88 tok/s** decode at **21.4 GB** — fits a 32 GB consumer card. On the same card `llama.cpp` runs **365.73 tok/s** (a **2.2×** gap, wider than the PRO 6000's 1.8× — our launch-bound decode doesn't ride the consumer boost clock yet; fusion is the lever). ([results](https://github.com/gittensor-ai-lab/sparkinfer/blob/main/bench/results/qwen3-30b-a3b_q4km_rtx5090.md))
 
 | Pass | Optimization | tok/s |
 |---|---|--:|
