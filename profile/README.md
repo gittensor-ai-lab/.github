@@ -48,6 +48,18 @@ bench/scripts/bench.sh --download --compare    # head-to-head vs llama.cpp, same
 bench/scripts/accuracy.sh --download           # accuracy: token-match / KL / perplexity vs llama.cpp
 ```
 
+## Accuracy — verified against llama.cpp
+
+Speed only counts if the output stays right. `accuracy.sh` teacher-forces a fixed text through **both engines on the same GGUF** and compares them position-by-position. On the RTX 5090 (Qwen3-30B-A3B Q4_K_M):
+
+| metric | result | |
+|---|---|---|
+| top-1 token agreement vs llama.cpp | **100%** | (bar ≥ 90%) |
+| mean KL(llama ‖ sparkinfer) | **0.14 nats** | distributions ~identical |
+| perplexity (sparkinfer, exact) | **6.13** | matches the reference |
+
+Same greedy choice as llama.cpp at **every** position. The same tool also gates each optimization against the **previous** build (expect ~100% top-1 + KL ≈ 0) — so no kernel change can silently regress quality. ([how it works + full results](https://github.com/gittensor-ai-lab/sparkinfer/blob/main/bench/results/accuracy_qwen3-30b-a3b_q4km.md))
+
 ---
 
 ## The problem we are solving
