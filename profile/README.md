@@ -4,9 +4,19 @@
 
 # gittensor-ai-lab
 
-**SN74 on Gittensor** — human engineers and AI agents co-designing and continuously improving kernels, memory systems, and routing for RTX 5090, RTX PRO 6000, RTX Spark, and Jetson Thor.
+**SN74 on Gittensor** — a **Blackwell-native** MoE/LLM inference runtime, co-designed and continuously improved by human engineers and AI agents to reach the hardware ceiling on NVIDIA's next generation of personal AI computers.
 
 Real kernel and runtime engineering: reproducible, hardware-level inference-speed gains beyond existing serving stacks — rewarded by **verified, source-required contribution, not benchmark gaming**.
+
+---
+
+## Vision
+
+**Blackwell only — by design.** We don't spread thin across vendors and GPU generations the way vLLM, SGLang, and llama.cpp must. We specialize on **NVIDIA Blackwell** (`sm_120` / `sm_121`) and drive it to the hardware ceiling — unified memory, GDDR7 / LPDDR5X bandwidth, the new SM. Generalists go wide; we go deep: **general across _models_ (Qwen, Gemma, …), uncompromising on one _architecture_.**
+
+**Blackwell is the substrate of the next computer.** The **RTX Spark** (GB10) is NVIDIA's personal AI supercomputer — 128 GB of unified memory brings full **70B+ MoE inference to a desk**, no datacenter required. Jetson Thor puts it in robots; RTX 5090 and RTX PRO 6000 put it in every workstation. The future personal machine ships with a Blackwell-class accelerator running large local models — and it needs a runtime built for exactly that silicon.
+
+**The demand is local AI.** Privacy, latency, cost, offline capability, sovereignty — inference is moving on-device, and fast. Whoever runs MoE/LLMs fastest on local Blackwell hardware owns that layer. **RTX Spark is our flagship**; the runtime that extracts the most from it becomes core infrastructure for the next generation of computing.
 
 ---
 
