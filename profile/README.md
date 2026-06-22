@@ -51,16 +51,17 @@ SN74 rewards engineers who close these gaps with source-verifiable kernel contri
 
 ## Repos & emission weights
 
-Org-level weights split the org's SN74 emission share across repos. *Within* each repo, contributions are scored on merit — kernels / runtime / moe by **verified speedup** (frontier-delta), bench / agent by **code quality**. Weights are dynamic and revisited as repos mature.
+The runtime is a single monorepo — **[sparkinfer](https://github.com/gittensor-ai-lab/sparkinfer)** (kernels + MoE engine + runtime + benchmarks); the [agent](https://github.com/gittensor-ai-lab/sparkinfer-agent) autotuner stays separate. Within `sparkinfer`, SN74 emission is split **by path**, and contributions are scored on merit — `kernels` / `runtime` / `moe` by **verified speedup** (frontier-delta), `bench` by **code quality**. Weights are dynamic and maturity-adaptive (see below).
 
-| Repo | Weight | What it does |
+| Path (in `sparkinfer`) | Weight | What |
 |---|--:|---|
-| [sparkinfer-kernels](https://github.com/gittensor-ai-lab/sparkinfer-kernels) | **0.40** | Native C++/CUDA kernels — flash decode (hd128/256/512, GQA), decode GEMV, fused quantized MoE expert FFN, GEMM, RMSNorm, RoPE, GGUF dequant. Where inference speed is actually won. |
-| [sparkinfer-runtime](https://github.com/gittensor-ai-lab/sparkinfer-runtime) | **0.25** | Scheduler, paged KV cache, CUDA-graph decode engine, native GGUF loading, MoE dispatch, model forward. |
-| [sparkinfer-moe](https://github.com/gittensor-ai-lab/sparkinfer-moe) | **0.20** | Sync-free MoE routing + expert dispatch: on-device token counts, no CPU readback, end-to-end CUDA-graph compatible. |
-| [sparkinfer-bench](https://github.com/gittensor-ai-lab/sparkinfer-bench) | **0.10** | Reproducible benchmarks + the eval harness: source-required builds, frozen weights, hardware-level metrics. |
-| [sparkinfer-agent](https://github.com/gittensor-ai-lab/sparkinfer-agent) | **0.05** | NCU-driven autonomous kernel optimization agent: profile → propose → compile → benchmark. |
+| `kernels/` | **0.42** | CUDA kernels — flash-decode (hd128/256/512), decode GEMV, fused quantized MoE expert FFN, GEMM, RMSNorm, RoPE, GGUF dequant. Where inference speed is won. |
+| `runtime/` | **0.26** | Scheduler, paged KV cache, CUDA-graph decode, native GGUF loading, model forward. |
+| `moe/` | **0.21** | Sync-free MoE router + expert dispatch — on-device counts, CUDA-graph-ready. |
+| `bench/` | **0.11** | Reproducible benchmarks + eval harness — source-required builds, frozen weights. |
 | | **1.00** | |
+
+Separate repos: [`sparkinfer-agent`](https://github.com/gittensor-ai-lab/sparkinfer-agent) (NCU-driven autotuning) carries its own small org share; **`kernel-wiki` is private** — the optimization-knowledge moat, earns nothing.
 
 ---
 
