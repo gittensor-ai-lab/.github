@@ -86,7 +86,7 @@ The runtime is a single monorepo — **[sparkinfer](https://github.com/gittensor
 | `bench/` | **0.11** | Reproducible benchmarks + eval harness — source-required builds, frozen weights. |
 | | **1.00** | |
 
-Separate repos: [`sparkinfer-agent`](https://github.com/gittensor-ai-lab/sparkinfer-agent) (NCU-driven autotuning) carries its own small org share; **`kernel-wiki` is private** — the optimization-knowledge moat, earns nothing.
+Separate repo: [`sparkinfer-agent`](https://github.com/gittensor-ai-lab/sparkinfer-agent) (NCU-driven autotuning) carries its own small org share.
 
 ---
 
