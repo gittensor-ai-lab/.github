@@ -122,7 +122,12 @@ This org is the inference-optimization arm of SN74 on Gittensor. The reward mode
 
 1. **Source-required, validator-rebuilt** — no pre-built binaries, no Docker-image submission. The validator compiles your PR from source, so the measured artifact *is* your code, and copying earns nothing.
 2. **Frontier-delta rewards** — you're paid for the **verified marginal speedup you add over the current best**, not your rank. Copy-the-leader-plus-ε pays ≈ ε.
-3. **Correctness-gated** — a fast kernel that changes the model's output scores zero; submissions must match a frozen reference within tolerance.
+3. **Correctness-gated** — speed counts only if the output is *right*. The reference is a frozen, SHA-pinned **exact fp32/fp64 evaluation of the same quantized weights** (so quantization loss is shared and only kernel errors surface). On a fixed prompt set **plus secret holdout / fuzzed shapes**, a submission must clear three layers:
+   - *per-kernel* — numerical match to an fp64 reference (dequant **bit-exact**; GEMV/attention within a calibrated fp tolerance);
+   - *end-to-end, teacher-forced* — **≥ 99.x% next-token argmax agreement** + bounded logit KL (teacher-forcing avoids single-token cascade divergence);
+   - *aggregate* — **perplexity within ε** of the reference on a frozen corpus.
+
+   Tolerances are calibrated above the FP noise floor between two correct implementations; holdout inputs block prompt special-casing; **both basket models (Qwen + Gemma) must pass**. The verdict is a deterministic pass/fail, so validators converge on it.
 4. **Multi-model basket** — wins must hold across Qwen3-MoE *and* Gemma 4; a single-model optimization is overfitting and doesn't count.
 5. **Reproducible metric** — normalized roofline % + end-to-end tok/s on a canonical GPU class, N-run median + significance gate, so independent validators converge.
 6. **Public ledger** — every frontier advance → `(Δ, author, commit)` is auditable.
