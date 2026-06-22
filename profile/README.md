@@ -156,7 +156,7 @@ Two architecturally **distinct** MoEs, deliberately chosen so optimizations must
 
 This org is the inference-optimization arm of SN74 on Gittensor. The reward model is built to pay **real engineering, not benchmark gaming** — the lesson from SN14:
 
-1. **Source-required, validator-rebuilt** — no pre-built binaries, no Docker-image submission. The validator compiles your PR from source, so the measured artifact *is* your code, and copying earns nothing.
+1. **Source-required, validator-rebuilt** — you submit source, never binaries or Docker images. The validator compiles your PR itself, so the measured artifact *is* your code, and copying earns nothing. (The prebuilt binaries in our [releases](https://github.com/gittensor-ai-lab/sparkinfer/releases) are a run convenience for users — not a submission format.)
 2. **Frontier-delta rewards** — you're paid for the **verified marginal speedup you add over the current best**, not your rank. Copy-the-leader-plus-ε pays ≈ ε.
 3. **Correctness-gated** — speed counts only if the output is *right*. The reference is a frozen, SHA-pinned **exact fp32/fp64 evaluation of the same quantized weights** (so quantization loss is shared and only kernel errors surface). On a fixed prompt set **plus secret holdout / fuzzed shapes**, a submission must clear three layers:
    - *per-kernel* — numerical match to an fp64 reference (dequant **bit-exact**; GEMV/attention within a calibrated fp tolerance);
