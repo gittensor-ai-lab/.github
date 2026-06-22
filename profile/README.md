@@ -141,3 +141,9 @@ This org is the inference-optimization arm of SN74 on Gittensor. The reward mode
 4. **Multi-model basket** — wins must hold across Qwen3-MoE *and* Gemma 4; a single-model optimization is overfitting and doesn't count.
 5. **Reproducible metric** — normalized roofline % + end-to-end tok/s on a canonical GPU class, N-run median + significance gate, so independent validators converge.
 6. **Public ledger** — every frontier advance → `(Δ, author, commit)` is auditable.
+
+### Impact labels — and how they age
+
+Performance PRs (kernels / runtime / moe) are bucketed **XL · L · M · S · XS** by the **verified speedup over the live frontier**, assigned by the eval loop — not by hand. Each label carries a weight, superlinear early so breakthroughs dominate.
+
+**These weights are not fixed — they mature with the runtime.** While there's large headroom, the reward sits in XL (new-SOTA / big wins). As the runtime approaches the hardware ceiling — where 10× wins no longer exist and a 3% gain is a genuine breakthrough — improvement is scored against **remaining headroom (roofline %)**, so a small absolute gain near the ceiling still maps to a high label, and org governance **rebalances the weights toward the smaller buckets**. The subnet keeps paying real progress instead of stalling once the easy wins are gone.
