@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="https://raw.githubusercontent.com/gittensor-ai-lab/.github/main/profile/gittensor-ai-lab-banner.png" alt="gittensor-ai-lab" width="100%">
+</p>
+
 # gittensor-ai-lab
 
 **SN74 on Gittensor** — human engineers and AI agents co-designing and continuously improving kernels, memory systems, and routing for RTX 5090, RTX PRO 6000, RTX Spark, and Jetson Thor.
