@@ -173,3 +173,12 @@ This org is the inference-optimization arm of SN74 on Gittensor. The reward mode
 Performance PRs (kernels / runtime / moe) are bucketed **XL · L · M · S · XS** by the **verified speedup over the live frontier**, assigned by the eval loop — not by hand. Each label carries a weight, superlinear early so breakthroughs dominate.
 
 **These weights are not fixed — they mature with the runtime.** While there's large headroom, the reward sits in XL (new-SOTA / big wins). As the runtime approaches the hardware ceiling — where 10× wins no longer exist and a 3% gain is a genuine breakthrough — improvement is scored against **remaining headroom (roofline %)**, so a small absolute gain near the ceiling still maps to a high label, and org governance **rebalances the weights toward the smaller buckets**. The subnet keeps paying real progress instead of stalling once the easy wins are gone.
+
+### Automated, on every PR
+
+Evaluation runs itself. A bot polls open PRs every ~30 minutes and, for each new commit, builds it
+**from source** on an RTX 5090, gates **correctness** (token-match / KL vs llama.cpp), benchmarks
+**decode speed**, and posts the **`eval:<label>`** verdict (XL · L · M · S · XS · none · REJECT) as
+a PR comment — a **deterministic** function of the measurements, so independent validators converge
+on it. It **never merges** (manual, after review). The label *is* the reward signal. See
+[`sparkinfer/eval`](https://github.com/gittensor-ai-lab/sparkinfer/tree/main/eval).
