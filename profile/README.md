@@ -37,6 +37,17 @@ Independently **verified on an RTX 5090** (sm_120, CUDA 13): clean build, `ctest
 
 Each pass is correctness-gated and reproducible from source — the unit the subnet rewards.
 
+## Try it
+
+On any Blackwell box (CUDA 12.8+) — the scripts auto-detect your GPU, fetch prebuilt binaries (or build from source), and download the model:
+
+```bash
+git clone https://github.com/gittensor-ai-lab/sparkinfer && cd sparkinfer
+bench/scripts/bench.sh --download              # decode tok/s
+bench/scripts/bench.sh --download --compare    # head-to-head vs llama.cpp, same GPU
+bench/scripts/accuracy.sh --download           # accuracy: token-match / KL / perplexity vs llama.cpp
+```
+
 ---
 
 ## The problem we are solving
