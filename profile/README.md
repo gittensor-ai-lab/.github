@@ -74,17 +74,16 @@ SN74 rewards engineers who close these gaps with source-verifiable kernel contri
 
 ---
 
-## Repos & emission weights
+## Repos & scoring
 
-The runtime is a single monorepo — **[sparkinfer](https://github.com/gittensor-ai-lab/sparkinfer)** (kernels + MoE engine + runtime + benchmarks); the [agent](https://github.com/gittensor-ai-lab/sparkinfer-agent) autotuner stays separate. Within `sparkinfer`, SN74 emission is split **by path**, and contributions are scored on merit — `kernels` / `runtime` / `moe` by **verified speedup** (frontier-delta), `bench` by **code quality**. Weights are dynamic and maturity-adaptive (see below).
+The runtime is a single monorepo — **[sparkinfer](https://github.com/gittensor-ai-lab/sparkinfer)** (kernels + MoE engine + runtime + benchmarks); the [agent](https://github.com/gittensor-ai-lab/sparkinfer-agent) autotuner stays separate. **Scoring is speedup-only:** SN74 pays each merged PR for its **verified frontier-delta speedup** — labeled **XL / L / M / S / XS** by the eval loop (or **BASELINE** for the first verified entry on a new model/target), scored the same wherever it lands, with **no per-subsystem budget**. **Non-speedup PRs — tooling, benchmarks, docs, refactors — are welcome but score 0.** The eval/scoring harness is **maintainer-owned** (changes there are gated to maintainers for scoring integrity).
 
-| Path (in `sparkinfer`) | Weight | What |
-|---|--:|---|
-| `kernels/` | **0.42** | CUDA kernels — flash-decode (hd128/256/512), decode GEMV, fused quantized MoE expert FFN, GEMM, RMSNorm, RoPE, GGUF dequant. Where inference speed is won. |
-| `runtime/` | **0.26** | Scheduler, paged KV cache, CUDA-graph decode, native GGUF loading, model forward. |
-| `moe/` | **0.21** | Sync-free MoE router + expert dispatch — on-device counts, CUDA-graph-ready. |
-| `bench/` | **0.11** | Reproducible benchmarks + eval harness — source-required builds, frozen weights. |
-| | **1.00** | |
+| Path (in `sparkinfer`) | What |
+|---|---|
+| `kernels/` | CUDA kernels — flash-decode (hd128/256/512), decode GEMV, fused quantized MoE expert FFN, GEMM, RMSNorm, RoPE, GGUF dequant. Where inference speed is won. |
+| `runtime/` | Scheduler, paged KV cache, CUDA-graph decode, native GGUF loading, model forward. |
+| `moe/` | Sync-free MoE router + expert dispatch — on-device counts, CUDA-graph-ready. |
+| `bench/` | Reproducible benchmarks + eval harness (the eval/scoring scripts are maintainer-owned). |
 
 Separate repo: [`sparkinfer-agent`](https://github.com/gittensor-ai-lab/sparkinfer-agent) (NCU-driven autotuning) carries its own small org share.
 
@@ -178,7 +177,8 @@ Performance PRs (kernels / runtime / moe) are bucketed **XL · L · M · S · XS
 
 Evaluation runs itself. A bot polls open PRs every ~30 minutes and, for each new commit, builds it
 **from source** on an RTX 5090, gates **correctness** (token-match / KL vs llama.cpp), benchmarks
-**decode speed**, and posts the **`eval:<label>`** verdict (XL · L · M · S · XS · none · REJECT) as
+**decode speed**, and posts the **`eval:<label>`** verdict (XL · L · M · S · XS · BASELINE · none · REJECT) as
 a PR comment — a **deterministic** function of the measurements, so independent validators converge
-on it. It **never merges** (manual, after review). The label *is* the reward signal. See
+on it. Non-speedup PRs (tooling, docs, refactors) are welcome but score 0. It **never merges**
+(manual, after review). The label *is* the reward signal. See
 [`sparkinfer/eval`](https://github.com/gittensor-ai-lab/sparkinfer/tree/main/eval).
