@@ -22,20 +22,9 @@ Real kernel and runtime engineering: reproducible, hardware-level inference-spee
 
 ## Proven
 
-**Qwen3-30B-A3B (Q4_K_M GGUF) runs end-to-end on an RTX PRO 6000 Blackwell (sm_120)**, decode optimized **0.60 → 134 tok/s (≈220×)** across 6 source-verifiable passes — **within 1.8× of llama.cpp** on the same model + GPU, output verified correct, **21.7 GB resident** (experts kept quantized, vs ~57 GB bf16).
+**Qwen3-30B-A3B (Q4_K_M GGUF) runs end-to-end on an RTX PRO 6000 Blackwell (sm_120)**, decode optimized **0.60 → 134 tok/s (≈220×)** across 6 source-verifiable passes ([live chart](https://gittensor-ai-lab.github.io/sparkinfer/dashboard/)) — **within 1.8× of llama.cpp** on the same model + GPU, output verified correct, **21.7 GB resident** (experts kept quantized, vs ~57 GB bf16).
 
 Independently **verified on an RTX 5090** (sm_120, CUDA 13): clean build, `ctest` **5/5**, compute-sanitizer **0 errors**, same correct output, **187.61 tok/s** decode (the live `v0.2.0` frontier, up from 163.88 at `v0.1.0`) at **21.4 GB** — fits a 32 GB consumer card. On the same card `llama.cpp` runs **365.73 tok/s** (a **1.95×** gap, narrowing — our launch-bound decode doesn't fully ride the consumer boost clock yet; fusion is the lever). ([live dashboard](https://gittensor-ai-lab.github.io/sparkinfer/dashboard/) · [results](https://github.com/gittensor-ai-lab/sparkinfer/blob/main/bench/results/qwen3-30b-a3b_q4km_rtx5090.md))
-
-| Pass | Optimization | tok/s |
-|---|---|--:|
-| baseline | dequantize all 128 experts | 0.60 |
-| 1 | fused selected-expert Q4_K_M FFN — dequant only the routed experts on-read | 32.7 |
-| 2 | decode GEMV — coalesced `[out,in]`, replaces M=1 tiled GEMM | 84.4 |
-| 3 | CUDA-graph decode — capture once, replay per token | 118.7 |
-| 4 | flash-decoding — KV-split + log-sum-exp combine | 133 |
-| 5 | fused residual + RMSNorm | 134 |
-
-Each pass is correctness-gated and reproducible from source — the unit the subnet rewards.
 
 ## Try it
 
