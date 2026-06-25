@@ -24,7 +24,7 @@ Real kernel and runtime engineering: reproducible, hardware-level inference-spee
 
 **Qwen3-30B-A3B (Q4_K_M GGUF) runs end-to-end on an RTX PRO 6000 Blackwell (sm_120)**, decode optimized **0.60 → 134 tok/s (≈220×)** across 6 source-verifiable passes — **within 1.8× of llama.cpp** on the same model + GPU, output verified correct, **21.7 GB resident** (experts kept quantized, vs ~57 GB bf16).
 
-Independently **verified on an RTX 5090** (sm_120, CUDA 13): clean build, `ctest` **5/5**, compute-sanitizer **0 errors**, same correct output, **163.88 tok/s** decode at **21.4 GB** — fits a 32 GB consumer card. On the same card `llama.cpp` runs **365.73 tok/s** (a **2.2×** gap, wider than the PRO 6000's 1.8× — our launch-bound decode doesn't ride the consumer boost clock yet; fusion is the lever). ([results](https://github.com/gittensor-ai-lab/sparkinfer/blob/main/bench/results/qwen3-30b-a3b_q4km_rtx5090.md))
+Independently **verified on an RTX 5090** (sm_120, CUDA 13): clean build, `ctest` **5/5**, compute-sanitizer **0 errors**, same correct output, **187.61 tok/s** decode (the live `v0.2.0` frontier, up from 163.88 at `v0.1.0`) at **21.4 GB** — fits a 32 GB consumer card. On the same card `llama.cpp` runs **365.73 tok/s** (a **1.95×** gap, narrowing — our launch-bound decode doesn't fully ride the consumer boost clock yet; fusion is the lever). ([live dashboard](https://gittensor-ai-lab.github.io/sparkinfer/dashboard/) · [results](https://github.com/gittensor-ai-lab/sparkinfer/blob/main/bench/results/qwen3-30b-a3b_q4km_rtx5090.md))
 
 | Pass | Optimization | tok/s |
 |---|---|--:|
@@ -54,11 +54,11 @@ Speed only counts if the output stays right. `accuracy.sh` teacher-forces a fixe
 
 | metric | result | |
 |---|---|---|
-| top-1 token agreement vs llama.cpp | **100%** | (bar ≥ 90%) |
+| top-1 token agreement vs llama.cpp | **98%** | (bar ≥ 90%) |
 | mean KL(llama ‖ sparkinfer) | **0.14 nats** | distributions ~identical |
-| perplexity (sparkinfer, exact) | **6.13** | matches the reference |
+| perplexity (sparkinfer, exact) | **6.16** | matches the reference |
 
-Same greedy choice as llama.cpp at **every** position. The same tool also gates each optimization against the **previous** build (expect ~100% top-1 + KL ≈ 0) — so no kernel change can silently regress quality. ([how it works + full results](https://github.com/gittensor-ai-lab/sparkinfer/blob/main/bench/results/accuracy_qwen3-30b-a3b_q4km.md))
+Same greedy choice as llama.cpp at **98 of 100** positions, KL ≈ 0.14 — well above the 90% bar. The same tool gates **every** PR against the live frontier (the auto-eval rejects any drop below the bar), so no kernel change can silently regress quality. ([how it works + full results](https://github.com/gittensor-ai-lab/sparkinfer/blob/main/bench/results/accuracy_qwen3-30b-a3b_q4km.md))
 
 ---
 
@@ -134,15 +134,17 @@ Two architecturally **distinct** MoEs, deliberately chosen so optimizations must
 - Sync-free MoE engine (on-device counts, CUDA-graph-ready)
 - Runtime: paged KV cache, scheduler, device query, **CUDA-graph decode**, greedy `generate()`
 - **Native GGUF loading** — mmap parser + on-GPU **byte-exact Q4_K/Q6_K dequant**; experts kept quantized resident
-- **Qwen3-30B-A3B Q4_K_M end-to-end on RTX PRO 6000 — decode 0.60 → 134 tok/s, within 1.8× of llama.cpp**, output verified
+- **Qwen3-30B-A3B Q4_K_M end-to-end on RTX PRO 6000 — decode 0.60 → 134 tok/s, within 1.8× of llama.cpp**, output verified; **RTX 5090 frontier 187.61 tok/s** (`v0.2.0`)
 - Correctness validated against a double-precision reference (full model to ~1e-8)
-- `v0.1.0` tagged across all repos
+- **Automated evaluation loop — live** — a bot builds each PR from source on an RTX 5090, gates correctness, scores the frontier-delta, and posts an `eval:<label>` verdict; results stream to a [public dashboard](https://gittensor-ai-lab.github.io/sparkinfer/dashboard/)
+- **Anti-gaming controls** — sensitive-path merge gate (eval/scoring harness maintainer-only), contributor denylist + sybil/copycat detection, opt-in on-device eval (maintainer greenlight)
+- **`v0.2.0`** tagged — prebuilt `sm_120` / CUDA 13 binaries attached, with source-build fallback
 
 **Next**
 - **Gemma 4 26B-A4B end-to-end** (interleaved local/global, `head_dim=512`, dual RoPE) — the second basket model
 - Head_dim-general flash-decode (128 / 256 / 512) + sliding-window mask
 - Long-context decode benchmark (8K–32K); batched prefill; top-p / temperature sampling
-- The inference-opt **evaluation loop**: source-required build → correctness gate → frontier-delta scoring → public ledger
+- Held-out/fuzzed correctness shapes + a verifiable frontier ledger (secret holdout, clock-pinned tps)
 
 **Then**
 - Tensor-core CuTe DSL GroupGEMM + SwiGLU (TMA, `sm_120a` / `sm_121a`); FP8 / FP4 weights + KV cache
@@ -175,10 +177,16 @@ Performance PRs (kernels / runtime / moe) are bucketed **XL · L · M · S · XS
 
 ### Automated, on every PR
 
-Evaluation runs itself. A bot polls open PRs every ~30 minutes and, for each new commit, builds it
+Evaluation runs itself. A bot polls open PRs every ~30 minutes and, for each greenlit PR, builds it
 **from source** on an RTX 5090, gates **correctness** (token-match / KL vs llama.cpp), benchmarks
 **decode speed**, and posts the **`eval:<label>`** verdict (XL · L · M · S · XS · BASELINE · none · REJECT) as
 a PR comment — a **deterministic** function of the measurements, so independent validators converge
-on it. Non-speedup PRs (tooling, docs, refactors) are welcome but score 0. It **never merges**
-(manual, after review). The label *is* the reward signal. See
+on it. Verdicts and the optimization journey stream to a [live dashboard](https://gittensor-ai-lab.github.io/sparkinfer/dashboard/).
+Non-speedup PRs (tooling, docs, refactors) are welcome but score 0. It **never merges** (manual, after review).
+
+The eval runs **opt-in** — a maintainer (or the PR template's *Tested on RTX 5090* checkbox) greenlights a
+PR with `test-on-5090`; everything else is `not-tested` and never reaches the GPU. The harness is hardened
+against gaming: the scoring code is **maintainer-only** (CODEOWNERS + a sensitive-paths status check) and the
+bot grades with it pinned to `origin/main`, a **denylist** auto-closes flagged accounts, and **copycat/sybil
+detection** flags PRs that re-submit another author's diff. See
 [`sparkinfer/eval`](https://github.com/gittensor-ai-lab/sparkinfer/tree/main/eval).
