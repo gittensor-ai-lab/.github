@@ -19,7 +19,7 @@ vLLM, SGLang, and llama.cpp must spread across vendors and GPU generations; we g
 **Qwen3-30B-A3B (Q4_K_M)** runs end-to-end on Blackwell, output verified correct vs llama.cpp:
 
 - **RTX PRO 6000** (sm_120) — decode **0.60 → 134 tok/s** across 6 source-verifiable passes ([live chart](https://gittensor-ai-lab.github.io/sparkinfer/dashboard/)), within **1.8×** of llama.cpp, **21.7 GB** resident (experts kept quantized, vs ~57 GB bf16).
-- **RTX 5090** (sm_120, CUDA 13) — frontier **187.61 tok/s** (`v0.2.0`) at **21.4 GB**, fits a 32 GB card; `ctest` 5/5, compute-sanitizer clean; **1.95×** behind llama.cpp and narrowing.
+- **RTX 5090** (sm_120, CUDA 13) — frontier **285.32 tok/s** (`v0.2.2`) at **21.4 GB**, fits a 32 GB card; `ctest` 5/5, compute-sanitizer clean; **1.28×** behind llama.cpp and narrowing.
 - **Accuracy** — **98%** top-1 token agreement, **KL ≈ 0.14**, perplexity 6.16. Every PR is gated against this bar, so no kernel change silently regresses quality. ([details](https://github.com/gittensor-ai-lab/sparkinfer/blob/main/bench/results/accuracy_qwen3-30b-a3b_q4km.md))
 
 ## Try it
