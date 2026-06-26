@@ -71,7 +71,7 @@ The reward model pays **real, verified speedups** (the lesson from SN14):
 - **Correctness-gated** — speed counts only if output is right: per-kernel match to an fp64 reference (dequant bit-exact), ≥99% teacher-forced next-token agreement + bounded KL, perplexity within ε — on a fixed set **plus secret holdout / fuzzed shapes**, and **both basket models must pass**.
 - **Auditable** — deterministic pass/fail; every frontier advance → `(Δ, author, commit)` on a public ledger.
 
-Labels are **headroom-adaptive**: while there's room they sit in XL (big wins); near the ceiling, gains are scored against remaining roofline % so a 3% win still ranks high — the subnet keeps paying real progress instead of stalling.
+Labels are **bands of % speedup over the frontier** (`XS` 2–3.5% … `XL` >18%; a sub-2% gain is within noise → `none`). They scale with the frontier, so every tier stays reachable as decode speed grows and the subnet keeps paying real progress instead of stalling.
 
 **Automated & hardened.** A bot evaluates each *greenlit* PR (tick *Tested on RTX 5090*, or a maintainer adds `test-on-5090`): builds from source on an RTX 5090, gates correctness, scores the frontier-delta, posts an `eval:<label>` verdict, and streams it to the [dashboard](https://gittensor-ai-lab.github.io/sparkinfer/dashboard/) — never auto-merging. The scoring harness is **maintainer-only** (CODEOWNERS + a sensitive-path gate, graded pinned to `origin/main`); a **denylist** auto-closes flagged accounts and **copycat/sybil detection** catches re-submitted diffs. See [`sparkinfer/eval`](https://github.com/gittensor-ai-lab/sparkinfer/tree/main/eval).
 
