@@ -19,7 +19,7 @@ vLLM, SGLang, and llama.cpp must spread across vendors and GPU generations; we g
 **Qwen3-30B-A3B (Q4_K_M)** runs end-to-end on Blackwell, output verified correct vs llama.cpp:
 
 - **RTX PRO 6000** (sm_120) — decode **0.60 → 134 tok/s** across 6 source-verifiable passes ([live chart](https://gittensor-ai-lab.github.io/sparkinfer/dashboard/)), within **1.8×** of llama.cpp, **21.7 GB** resident (experts kept quantized, vs ~57 GB bf16).
-- **RTX 5090** (sm_120, CUDA 13) — frontier **313.14 tok/s** (`v0.2.3`) at **21.4 GB**, fits a 32 GB card; `ctest` 5/5, compute-sanitizer clean; **1.17×** behind llama.cpp and narrowing. Each PR is scored against `main` on the **same** GPU, so the delta is hardware-independent.
+- **RTX 5090** (sm_120, CUDA 13) — frontier **388.68 tok/s** (`v0.3.0`) at **21.4 GB**, fits a 32 GB card; `ctest` 5/5, compute-sanitizer clean. **Now past llama.cpp** — **+4.5%** at 128-tok decode (~parity at long context), the first **kernel-level** decode win on this model: same GGUF, same Q4_K_M precision, same greedy bs=1 decode — no speculative decoding or attention shortcut. Each PR is scored against `main` on the **same** GPU, so the delta is hardware-independent.
 - **Accuracy** — **98%** top-1 token agreement, **KL ≈ 0.14**, perplexity 6.16. Every PR is gated against this bar, so no kernel change silently regresses quality. ([details](https://github.com/gittensor-ai-lab/sparkinfer/blob/main/bench/results/accuracy_qwen3-30b-a3b_q4km.md))
 
 ## Try it
