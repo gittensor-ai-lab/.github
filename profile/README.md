@@ -4,81 +4,112 @@
 
 # gittensor-ai-lab
 
-**SN74 on Gittensor** — a **Blackwell-native** MoE/LLM inference runtime, pushed toward the hardware ceiling by human engineers and AI agents. Real kernel and runtime work, rewarded by **verified, source-required speedups — not benchmark gaming**.
+**We build SPARKINFER: the fastest MoE/LLM inference runtime for consumer and edge NVIDIA Blackwell GPUs.**
 
-[**Live dashboard**](https://gittensor-ai-lab.github.io/sparkinfer/dashboard/) · [**sparkinfer**](https://github.com/gittensor-ai-lab/sparkinfer) · [**releases**](https://github.com/gittensor-ai-lab/sparkinfer/releases)
+SPARKINFER is a Blackwell-native C++/CUDA runtime for **local AI agents**, **edge AI**, and **robotics** on RTX 50xx, RTX PRO 6000, RTX Spark / GB10, and Jetson Thor. It is optimized through **SN74 on Gittensor**, where every speed claim is rebuilt from source, checked for correctness, and measured on real RTX 5090 hardware.
+
+[Live dashboard](https://gittensor-ai-lab.github.io/sparkinfer/dashboard/) · [Runtime repo](https://github.com/gittensor-ai-lab/sparkinfer) · [Eval logs](https://gittensor-ai-lab.github.io/sparkinfer-log/) · [Miner guide](https://github.com/gittensor-ai-lab/sparkinfer/blob/main/docs/miner-guide.md)
 
 ---
 
-## Why Blackwell-only
+## What We Build
 
-vLLM, SGLang, and llama.cpp must spread across vendors and GPU generations; we go the other way — **deep on NVIDIA Blackwell** (`sm_120` / `sm_121`): general across *models* (Qwen, Gemma), uncompromising on one *architecture*. Blackwell is the substrate of the next personal computer — the **RTX Spark** (GB10, 128 GB unified) brings full 70B+ MoE inference to a desk, Jetson Thor to robots, RTX 5090 / PRO 6000 to every workstation. Local inference (privacy, latency, cost, offline) is where AI is heading, and whoever runs MoE fastest on local Blackwell owns that layer. **RTX Spark is our flagship.**
+SPARKINFER targets the gap between cloud inference engines and portable baselines:
 
-## Proven
+- **Fast local decode.** Batch-size-1 MoE/LLM inference for personal agents where latency, power, and memory decide usability.
+- **Consumer and edge Blackwell.** `sm_120` RTX 5090 / RTX PRO 6000 and `sm_121` RTX Spark / GB10 / Jetson Thor. It is not a B200/GB200 datacenter runtime.
+- **Small native runtime.** C++/CUDA, no Python service stack required for the core runtime path.
+- **Correctness-gated speed.** Optimizations count only when token-match and KL stay within the eval thresholds.
+- **Source-rebuilt evaluation.** PRs are built from source on the evaluator. Prebuilt binaries are only a run convenience, never a submission format.
 
-**Qwen3-30B-A3B (Q4_K_M)** runs end-to-end on Blackwell, output verified correct vs llama.cpp:
+## Current RTX 5090 Frontier
 
-- **RTX PRO 6000** (sm_120) — decode **0.60 → 134 tok/s** across 6 source-verifiable passes ([live chart](https://gittensor-ai-lab.github.io/sparkinfer/dashboard/)), within **1.8×** of llama.cpp, **21.7 GB** resident (experts kept quantized, vs ~57 GB bf16).
-- **RTX 5090** (sm_120, CUDA 13) — frontier **453.70 tok/s** at **21.4 GB**, fits a 32 GB card; `ctest` 5/5, compute-sanitizer clean. **20%+ past llama.cpp** — **+24% @128-tok, +21.6% @256, +17.6% @512** (ahead at *every* context length), a **kernel-level** win: same GGUF, same Q4_K_M precision, same greedy bs=1 decode — no speculative decoding or attention shortcut. Each PR is scored against `main` on the **same** GPU (hardware-independent), and every eval is **reproducible from source + immutably logged** ([trust model](https://github.com/gittensor-ai-lab/sparkinfer/blob/main/EVAL-TRUST.md) · [eval log](https://github.com/gittensor-ai-lab/sparkinfer-log)).
-- **Accuracy** — **98%** top-1 token agreement, **KL ≈ 0.14**, perplexity 6.16. Every PR is gated against this bar, so no kernel change silently regresses quality. ([details](https://github.com/gittensor-ai-lab/sparkinfer/blob/main/bench/results/accuracy_qwen3-30b-a3b_q4km.md))
+Qwen3-30B-A3B, 128 generated tokens, batch size 1.
 
-## Try it
+| context | sparkinfer<br>GGUF Q4_K_M | llama.cpp<br>GGUF Q4_K_M | vLLM<br>GPTQ Int4 | SGLang<br>GPTQ Int4 | TensorRT-LLM<br>NVFP4 |
+|---:|---:|---:|---:|---:|---:|
+| 128 | **493.56 tok/s** | 365.85 tok/s | 280.83 tok/s | 241.21 tok/s | 99.00 tok/s |
+| 512 | **469.58 tok/s** | 342.59 tok/s | 270.86 tok/s | 239.82 tok/s | 98.59 tok/s |
+| 4k | **392.65 tok/s** | 292.99 tok/s | 202.65 tok/s | 234.67 tok/s | failed |
+| 16k | **266.14 tok/s** | 245.53 tok/s | 81.89 tok/s | 226.12 tok/s | not run |
 
-On any Blackwell box (CUDA 12.8+) — auto-detects the GPU, fetches prebuilt binaries (or builds from source), downloads the model:
+sparkinfer and llama.cpp use the same RTX 5090, same Qwen3-30B-A3B Q4_K_M GGUF, and same 128 generated tokens. vLLM, SGLang, and TensorRT-LLM use the fastest successful quantized HF path from the same competitor run because they do not load GGUF. Full commands, model IDs, caveats, and raw artifact paths are in [`bench/competitors/latest-results.md`](https://github.com/gittensor-ai-lab/sparkinfer/blob/main/bench/competitors/latest-results.md).
+
+Runtime footprint, excluding model weights and launcher scripts:
+
+| runtime | measured artifact | size | sparkinfer is |
+|---|---|---:|---:|
+| sparkinfer | native runtime binary | **2.5 MB** | baseline |
+| llama.cpp | CUDA runtime executable + shared libs | 80 MB | 33x smaller |
+| vLLM | runtime package | 605 MB | 243x smaller |
+| SGLang | runtime + native kernel packages | 1.9 GB | 743x smaller |
+| TensorRT-LLM | runtime package | 3.6 GB | 1,430x smaller |
+
+Quality is checked separately from speed. The current 196-item quality suite keeps sparkinfer in the same range as llama.cpp/vLLM while the runtime stays much smaller and faster on the tracked decode path.
+
+## Why It Exists
+
+Most LLM inference engines were built for datacenter GPUs and cloud serving. On consumer GPUs they can be hard to install, heavy, power hungry, and slow to adapt to new MoE models or decode algorithms because their codebases are large and multi-target.
+
+SPARKINFER is built for the opposite use case:
+
+- **Local-first AI.** Your data stays on your machine.
+- **Agent-native decode.** Optimized for single-stream, low-latency token generation.
+- **Power-aware Blackwell kernels.** Designed for cards people actually own, not only datacenter GPUs.
+- **Fast-moving MoE support.** Quantized experts, paged KV cache, flash-decode, CUDA graphs, and sync-free MoE dispatch are first-class runtime features.
+- **Small enough to audit.** The core runtime is measured in megabytes, not gigabytes.
+
+## How SN74 Keeps It Honest
+
+SN74 rewards verified marginal speedup, not claims in a PR description.
+
+1. A contributor opens a PR with source changes and benchmark evidence.
+2. The bot builds `main` and the PR from source on the same RTX 5090.
+3. Correctness is checked with token-match and KL against the reference path.
+4. Decode guards run at 128, 512, 4k, and 16k context.
+5. A real improvement above the significance gate gets an `eval:<label>` score.
+6. Regressions are marked explicitly with `regression-*` labels.
+7. Public artifacts go to the dashboard and eval log.
+
+The eval path is trust-hardened: held-out prompts reduce overfitting, model weights and llama.cpp references are pinned, GPU clock metadata is recorded, and every frontier advance is immutably logged. Sub-2% gains are never aggregated across contexts. Tooling, docs, refactors, and tests are welcome, but SN74 score is speedup-only.
+
+## Repository Map
+
+| repo | purpose |
+|---|---|
+| [`sparkinfer`](https://github.com/gittensor-ai-lab/sparkinfer) | Main runtime monorepo: `kernels/`, `runtime/`, `moe/`, `bench/`, eval tooling, docs |
+| [`sparkinfer-log`](https://github.com/gittensor-ai-lab/sparkinfer-log) | Immutable public eval log for reproducible PR runs |
+| [`sparkinfer-bench`](https://github.com/gittensor-ai-lab/sparkinfer-bench) | Standalone reproducible benchmark work |
+| [`sparkinfer-kernels`](https://github.com/gittensor-ai-lab/sparkinfer-kernels) | Kernel-focused component history |
+| [`sparkinfer-runtime`](https://github.com/gittensor-ai-lab/sparkinfer-runtime) | Runtime-focused component history |
+| [`sparkinfer-moe`](https://github.com/gittensor-ai-lab/sparkinfer-moe) | MoE-focused component history |
+
+The main work now happens in [`sparkinfer`](https://github.com/gittensor-ai-lab/sparkinfer).
+
+## Quickstart
+
+On an NVIDIA Blackwell box with CUDA 12.8+:
 
 ```bash
-git clone https://github.com/gittensor-ai-lab/sparkinfer && cd sparkinfer
-bench/scripts/bench.sh --download              # decode tok/s
-bench/scripts/bench.sh --download --compare    # head-to-head vs llama.cpp
-bench/scripts/accuracy.sh --download           # token-match / KL / perplexity vs llama.cpp
+git clone https://github.com/gittensor-ai-lab/sparkinfer
+cd sparkinfer
+
+# Decode throughput.
+bench/scripts/bench.sh --download
+
+# Head-to-head vs llama.cpp on the same GGUF and GPU.
+bench/scripts/bench.sh --download --compare
+
+# Accuracy gate: token-match, KL, perplexity.
+bench/scripts/accuracy.sh --download
 ```
 
-## Target hardware & models
+The scripts auto-detect the GPU arch, use the newest matching prebuilt binary when available, and fall back to a source build when needed.
 
-Consumer/workstation Blackwell is `sm_120` / `sm_121` — **not** `sm_100` (datacenter B200/GB200, binary-incompatible). Requires CUDA 12.8+.
+## Roadmap
 
-| Device | Memory | Bandwidth | Arch |
-|---|---|---|---|
-| **RTX Spark** (GB10) — flagship | 128 GB LPDDR5X unified | ~273 GB/s | sm_121 |
-| **RTX PRO 6000** (GB202) — bring-up | 96 GB GDDR7 | ~1.79 TB/s | sm_120 |
-| **RTX 5090** (GB202) | 32 GB GDDR7 | ~1.79 TB/s | sm_120 |
-| **Jetson Thor** | unified | — | sm_121 |
+**Milestone 1 - RTX 5090 proof of concept and v1.0.** Make `sm_120` RTX 5090 the proof platform for Qwen3.6 MoE: fastest TPS and TTFT across tracked context sizes, DFlash3 as the default decode path, SOTA decode algorithms implemented as first-class runtime features, power/thermals optimized, and the v1.0 release target ready to ship.
 
-Two deliberately **distinct** MoEs — a win must generalize across both, or it's overfitting and doesn't count:
+**Milestone 2 - PRO 6000 / RTX Spark v2.0.** Extend the same runtime across RTX 50xx, RTX PRO 6000, and unified-memory Blackwell systems such as RTX Spark / GB10 and Jetson Thor (`sm_121`). The v2.0 target is a production-ready local runtime for personal AI agents.
 
-| Model | Experts | top-k | The hard part |
-|---|---|---|---|
-| **Qwen3.5-35B-A3B** | 256 | 8 + 1 | extreme expert count, skinny GEMM, GQA `head_dim=128` |
-| **Gemma 4 26B-A4B** | 128 | 8 + 1 | `head_dim=512` globals (no public kernel), local-SWA/global interleave, dual RoPE |
-
-> Proven today via **Qwen3-30B-A3B (Q4_K_M)** as the GGUF proxy for the 35B target; Gemma 4 is the next forcing function.
-
-## How it's built
-
-Native **C++/CUDA, no Triton**. The production path is **portable CUDA** (`sm_120` / `sm_121` today); the **[CuTe DSL](https://docs.nvidia.com/cutlass/latest/media/docs/pythonDSL/cute_dsl.html)** tensor-core path (TMA, WGMMA, persistent kernels) is opt-in for the ceiling.
-
-- **Sync-free MoE** — router counts stay on-device (no `cudaMemcpy` / `cudaDeviceSynchronize` between routing and dispatch), so the whole MoE forward is captured as one CUDA graph.
-- **Fused expert FFN** — dequant only the routed experts on-read, SwiGLU in registers before any DRAM write; variable tokens-per-expert handled on-device.
-- **CUDA-graph decode**, paged KV cache, byte-exact on-GPU Q4_K/Q6_K dequant (experts kept quantized resident).
-- *Roadmap:* Blackwell warp specialization — producer/consumer warpgroups pipelining TMA+WGMMA through 228 KB smem for memory-peak overlap on RTX Spark's LPDDR5X.
-
-## SN74 — rewards for engineering, not gaming
-
-The reward model pays **real, verified speedups** (the lesson from SN14):
-
-- **Source-required, validator-rebuilt** — you submit source; the validator compiles your PR, so the measured artifact *is* your code and copying earns nothing. (Release binaries are a user convenience, not a submission format.)
-- **Frontier-delta** — paid for the **marginal speedup over the current best**, not rank; copy-the-leader-plus-ε pays ≈ ε. Labeled **XL/L/M/S/XS** by the eval loop, scored the same in any subsystem (no per-area budget). **Non-speedup PRs are welcome but score 0.**
-- **Correctness-gated** — speed counts only if output is right: per-kernel match to an fp64 reference (dequant bit-exact), ≥99% teacher-forced next-token agreement + bounded KL, perplexity within ε — on a fixed set **plus secret holdout / fuzzed shapes**, and **both basket models must pass**.
-- **Auditable** — deterministic pass/fail; every frontier advance → `(Δ, author, commit)` on a public ledger.
-
-Labels are **bands of % speedup over the frontier** (`XS` 2–3.5% … `XL` >18%; a sub-2% gain is within noise → `none`). They scale with the frontier, so every tier stays reachable as decode speed grows and the subnet keeps paying real progress instead of stalling.
-
-**Automated & hardened.** A bot evaluates each *greenlit* PR (tick *Tested on RTX 5090*, or a maintainer adds `test-on-5090`): builds from source on an RTX 5090, gates correctness, scores the frontier-delta, posts an `eval:<label>` verdict, and streams it to the [dashboard](https://gittensor-ai-lab.github.io/sparkinfer/dashboard/) — never auto-merging. The scoring harness is **maintainer-only** (CODEOWNERS + a sensitive-path gate, graded pinned to `origin/main`); a **denylist** auto-closes flagged accounts and **copycat/sybil detection** catches re-submitted diffs. It's also **trust-hardened**: correctness is gated on a fresh **held-out prompt** each run (no overfitting), the baseline weights + llama.cpp reference are **sha/commit-pinned** (no poisoning), the GPU clock is **recorded** for reproducibility, and every frontier advance + run is **immutably logged** with full provenance. See [`sparkinfer/eval`](https://github.com/gittensor-ai-lab/sparkinfer/tree/main/eval) · [EVAL-TRUST.md](https://github.com/gittensor-ai-lab/sparkinfer/blob/main/EVAL-TRUST.md).
-
-## Repos & roadmap
-
-Single monorepo — **[sparkinfer](https://github.com/gittensor-ai-lab/sparkinfer)** (`kernels/` · `runtime/` · `moe/` · `bench/`); the NCU-driven **[sparkinfer-agent](https://github.com/gittensor-ai-lab/sparkinfer-agent)** autotuner is a separate repo.
-
-- **Shipped** — portable CUDA kernels (flash-decode incl. `head_dim=512`, KV-split, decode GEMV, sync-free MoE FFN, GEMM, RMSNorm, RoPE); CUDA-graph decode + paged KV + native GGUF; Qwen3-30B-A3B end-to-end; **automated eval loop + live dashboard + anti-gaming**; **`v0.2.0`** (prebuilt sm_120/CUDA13 binaries).
-- **Next** — Gemma 4 26B-A4B end-to-end (`head_dim=512`, dual RoPE, SWA/global); head_dim-general flash-decode; long-context + batched prefill; held-out/fuzzed correctness + clock-pinned ledger.
-- **Then** — CuTe DSL tensor-core GroupGEMM + SwiGLU, FP8/FP4 weights + KV; expert prefetch/eviction + RTX Spark unified-memory streaming; NCU autotuning loop feeding SN74.
+**Milestone 3 - Physical AI v3.0.** Deploy SOTA VLA and world foundation models on edge Blackwell to accelerate robotics: low-latency perception-action loops, on-device planning, multimodal memory, and runtime support for physical AI agents that must operate locally and safely.
