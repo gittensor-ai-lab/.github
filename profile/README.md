@@ -24,22 +24,18 @@ Two runtimes, one lineage. Same C++/CUDA core, same correctness-gated evaluation
 
 Agentic inference on the GPUs people own. Blackwell-native from the start: `sm_120` and `sm_121`, not datacenter `sm_100`.
 
-| | |
-|---|---|
-| Hardware | RTX 5090 · RTX PRO 6000 · RTX Spark GB10 · DGX Spark |
-| Frontier | **+71% vs llama.cpp** — 473 tok/s on Qwen3.6-35B-A3B, RTX 5090, same GGUF, bs=1 |
-| Footprint | **2.5 MB** native binary — 33× smaller than llama.cpp's CUDA runtime |
+- **Hardware** — RTX 5090 · RTX PRO 6000 · RTX Spark GB10 · DGX Spark
+- **Frontier** — **+71% vs llama.cpp**, 473 tok/s on Qwen3.6-35B-A3B (RTX 5090, same GGUF, bs=1)
+- **Footprint** — **2.5 MB** native binary, 33× smaller than llama.cpp's CUDA runtime
 
 ### 🔷 [SparkInfer-K3](https://github.com/gittensor-ai-lab/sparkinfer-k3) — frontier scale
 
 Kimi K3 on a single 8× H200 node — the largest open-weight model anyone can actually run.
 
-| | |
-|---|---|
-| Model | 2.8T params · 896 routed experts · hybrid KDA + MLA · 1M context |
-| Status | Runs end to end, all 93 layers across 8 GPUs, tensor-parallel and pipeline |
-| Parity | **top-1 100%** against llama.cpp on identical weights and ids |
-| Open problem | Speed. This is the live competition |
+- **Model** — 2.8T params · 896 routed experts · hybrid KDA + MLA · 1M context
+- **Status** — runs end to end, all 93 layers across 8 GPUs, tensor-parallel and pipeline
+- **Parity** — **top-1 100%** against llama.cpp on identical weights and ids
+- **Open problem** — speed. This is the live competition
 
 At the edge the bottleneck is one card's memory bandwidth. At frontier scale it becomes expert residency across a node. Working both ends is what full-stack inference optimization means here.
 
